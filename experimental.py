@@ -2,8 +2,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed, TimeoutError
 from logging import info, error, warning, basicConfig, INFO
 from multiprocessing import cpu_count, Manager
 from functools import lru_cache
+from gmpy2 import mpz, is_prime
 from numba import njit
-from gmpy2 import mpz
 from tqdm import tqdm
 import numpy as np
 import gmpy2
@@ -53,11 +53,20 @@ def process_prime_candidate(p):
 
     try:
 
-        if lucas_lehmer_test(p):
+        # Step 1: PRP (Probable Prime Test) for 2^p - 1 using gmpy2
 
-            M_p = mpz((1 << p) - 1)
-            info(f"Mersenne prime found: 2^{p} - 1 = {M_p}")
-            return (p, M_p)
+        if is_prime(M_p := mpz((1 << p) - 1)):  # This is a probable prime test (PRP)
+
+            # Step 2: Verify the probable prime using Lucas-Lehmer test
+
+            if lucas_lehmer_test(p):
+
+                info(f"Mersenne prime verified: 2^{p} - 1 = {M_p}")
+                return (p, M_p)
+
+            else:
+
+                warning(f"Lucas-Lehmer test failed for PRP: 2^{p} - 1")
 
     except Exception as e:
 
